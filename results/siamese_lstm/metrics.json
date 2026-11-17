@@ -1,0 +1,43 @@
+{
+  "slug": "siamese_lstm",
+  "name": "Siamese LSTM",
+  "threshold": 0.6341121792793274,
+  "metrics": {
+    "accuracy": 0.8195399455849617,
+    "precision": 0.7307668916864319,
+    "recall": 0.8072556264696003,
+    "f1": 0.7671092951991828,
+    "roc_auc": 0.9011109338095622,
+    "confusion_matrix": [
+      [
+        21118,
+        4427
+      ],
+      [
+        2869,
+        12016
+      ]
+    ]
+  },
+  "train_seconds": 337.20909580000443,
+  "validation_inference_seconds": 0.7229778999753762,
+  "n_train": 345653,
+  "n_tune": 18193,
+  "n_validation": 40430,
+  "device": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "seed": 42,
+  "config": {
+    "max_vocab": 50000,
+    "min_freq": 2,
+    "max_len": 30,
+    "embedding_dim": 200,
+    "hidden_dim": 128,
+    "dropout": 0.3,
+    "pooling": "max",
+    "lr": 0.001,
+    "lr_decay": 0.5,
+    "batch_size": 512,
+    "epochs": 15,
+    "patience": 3
+  }
+}

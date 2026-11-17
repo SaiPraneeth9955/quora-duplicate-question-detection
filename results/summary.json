@@ -1,0 +1,11 @@
+{
+  "best_model": "sbert_finetuned",
+  "selection_rule": "highest validation F1, ties broken by ROC-AUC",
+  "ranking": [
+    "sbert_finetuned",
+    "siamese_bilstm",
+    "siamese_lstm",
+    "sbert",
+    "tfidf"
+  ]
+}
