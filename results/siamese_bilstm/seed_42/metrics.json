@@ -1,6 +1,8 @@
 {
   "slug": "siamese_bilstm",
   "name": "Siamese BiLSTM",
+  "seed": 42,
+  "saved_for_inference": true,
   "threshold": 0.5877827405929565,
   "metrics": {
     "accuracy": 0.8182537719515212,
@@ -19,13 +21,13 @@
       ]
     ]
   },
-  "train_seconds": 342.5023292999831,
-  "validation_inference_seconds": 0.881195599999046,
+  "train_seconds": 337.4786514999869,
+  "validation_inference_seconds": 0.8793494999990799,
   "n_train": 345653,
   "n_tune": 18193,
   "n_validation": 40430,
   "device": "NVIDIA GeForce RTX 3050 Laptop GPU",
-  "seed": 42,
+  "split_seed": 42,
   "config": {
     "max_vocab": 50000,
     "min_freq": 2,

@@ -1,6 +1,7 @@
 """Build the comparison table and figures from saved results."""
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -11,9 +12,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.ticker import MaxNLocator
 from sklearn.metrics import roc_curve
 
-from qqp.pipeline import MODELS
+from qqp.pipeline import MODELS, run_name
 from qqp.utils import read_json, write_json
 
 log = logging.getLogger(__name__)
@@ -71,58 +73,116 @@ plt.rcParams.update(
 )
 
 
-def load_results(results_dir: str | Path) -> list[dict]:
-    """Saved results for every trained model, in canonical order."""
+@dataclass
+class ModelResults:
+    """Every saved run of one model; trained models have one run per seed."""
+
+    slug: str
+    name: str
+    runs: list[dict]
+
+    @property
+    def primary(self) -> dict:
+        """The run whose model was saved for inference."""
+        return next((r for r in self.runs if r.get("saved_for_inference")), self.runs[0])
+
+    def values(self, key: str) -> np.ndarray:
+        if key == "train_minutes":
+            return np.array([r["train_seconds"] / 60 for r in self.runs])
+        if key == "pairs_per_second":
+            return np.array(
+                [r["n_validation"] / r["validation_inference_seconds"] for r in self.runs]
+            )
+        return np.array([r["metrics"][key] for r in self.runs])
+
+    def mean(self, key: str) -> float:
+        return float(self.values(key).mean())
+
+    def std(self, key: str) -> float | None:
+        """Sample standard deviation across seeds; None for a single run."""
+        values = self.values(key)
+        return float(values.std(ddof=1)) if len(values) > 1 else None
+
+
+def load_results(results_dir: str | Path) -> list[ModelResults]:
+    """Saved runs for every trained model, in canonical order."""
     root = Path(results_dir)
-    return [
-        read_json(root / slug / "metrics.json")
-        for slug in MODELS
-        if (root / slug / "metrics.json").exists()
-    ]
+    models = []
+    for slug, spec in MODELS.items():
+        runs = [read_json(path) for path in sorted((root / slug).glob("*/metrics.json"))]
+        if runs:
+            runs.sort(key=lambda r: (r["seed"] is not None, r["seed"] or 0))
+            models.append(ModelResults(slug, spec.name, runs))
+    return models
 
 
-def comparison_table(results: list[dict]) -> pd.DataFrame:
+def runs_table(models: list[ModelResults]) -> pd.DataFrame:
+    """One row per individual run."""
     rows = []
-    for result in results:
-        row = {"Model": result["name"]}
-        row.update({label: result["metrics"][key] for key, label in METRICS.items()})
-        row["Threshold"] = result["threshold"]
-        row["Train time (min)"] = result["train_seconds"] / 60
-        row["Inference (pairs/s)"] = result["n_validation"] / result["validation_inference_seconds"]
+    for model in models:
+        for run in model.runs:
+            row = {"model": model.slug, "seed": run["seed"], "threshold": run["threshold"]}
+            row.update({key: run["metrics"][key] for key in METRICS})
+            row["train_minutes"] = run["train_seconds"] / 60
+            row["pairs_per_second"] = run["n_validation"] / run["validation_inference_seconds"]
+            rows.append(row)
+    return pd.DataFrame(rows).astype({"seed": "Int64"})
+
+
+def comparison_table(models: list[ModelResults]) -> pd.DataFrame:
+    """Mean and standard deviation of each metric across a model's runs."""
+    rows = []
+    for model in models:
+        row = {"model": model.slug, "name": model.name, "runs": len(model.runs)}
+        for key in (*METRICS, "train_minutes", "pairs_per_second"):
+            row[f"{key}_mean"] = model.mean(key)
+            row[f"{key}_std"] = model.std(key)
         rows.append(row)
-    return pd.DataFrame(rows).set_index("Model")
+    return pd.DataFrame(rows)
 
 
-def to_markdown(table: pd.DataFrame) -> str:
-    def cell(column: str, value: float) -> str:
-        if column == "Train time (min)":
-            return "-" if value == 0 else f"{value:.1f}"
-        if column == "Inference (pairs/s)":
-            return f"{value:,.0f}"
-        if column == "Threshold":
-            return f"{value:.3f}"
-        return f"{value:.4f}"
+def to_markdown(models: list[ModelResults]) -> str:
+    def cell(model: ModelResults, key: str) -> str:
+        mean, std = model.mean(key), model.std(key)
+        if key == "train_minutes":
+            if mean == 0:
+                return "-"
+            if mean < 0.05:
+                return "< 0.1"
+            return f"{mean:.1f}" if std is None else f"{mean:.1f} ± {std:.1f}"
+        if key == "pairs_per_second":
+            return f"{mean:,.0f}"
+        return f"{mean:.4f}" if std is None else f"{mean:.4f} ± {std:.4f}"
 
-    header = "| Model | " + " | ".join(table.columns) + " |"
-    divider = "|---|" + "---:|" * len(table.columns)
+    columns = {**METRICS, "train_minutes": "Train time (min)", "pairs_per_second": "Pairs/s"}
+    header = "| Model | Runs | " + " | ".join(columns.values()) + " |"
+    divider = "|---|---:|" + "---:|" * len(columns)
     lines = [
-        f"| {model} | " + " | ".join(cell(c, row[c]) for c in table.columns) + " |"
-        for model, row in table.iterrows()
+        f"| {model.name} | {len(model.runs)} | "
+        + " | ".join(cell(model, key) for key in columns)
+        + " |"
+        for model in models
     ]
     return "\n".join([header, divider, *lines]) + "\n"
 
 
-def plot_metrics(results: list[dict], path: Path) -> None:
-    names = [r["name"] for r in results]
-    colors = [MODEL_COLORS[r["slug"]] for r in results]
-    positions = np.arange(len(results))[::-1]
+def plot_metrics(models: list[ModelResults], path: Path) -> None:
+    names = [m.name for m in models]
+    colors = [MODEL_COLORS[m.slug] for m in models]
+    positions = np.arange(len(models))[::-1]
 
-    fig, axes = plt.subplots(1, len(METRICS), figsize=(14, 0.5 * len(results) + 1.4), sharey=True)
+    fig, axes = plt.subplots(1, len(METRICS), figsize=(14, 0.5 * len(models) + 1.6), sharey=True)
     for ax, (key, label) in zip(axes, METRICS.items(), strict=True):
-        values = [r["metrics"][key] for r in results]
-        ax.barh(positions, values, height=0.62, color=colors)
-        for position, value in zip(positions, values, strict=True):
-            ax.text(value + 0.02, position, f"{value:.3f}", va="center", color=INK, fontsize=9)
+        means = [m.mean(key) for m in models]
+        spreads = [m.std(key) or 0.0 for m in models]
+        ax.barh(positions, means, height=0.62, color=colors)
+        ax.errorbar(
+            means, positions, xerr=spreads, fmt="none", ecolor=INK, elinewidth=1.2, capsize=3
+        )
+        for position, mean, spread in zip(positions, means, spreads, strict=True):
+            ax.text(
+                mean + spread + 0.02, position, f"{mean:.3f}", va="center", color=INK, fontsize=9
+            )
         ax.set_title(label)
         ax.set_xlim(0, 1.18)
         ax.set_xticks([0, 0.5, 1.0])
@@ -130,22 +190,35 @@ def plot_metrics(results: list[dict], path: Path) -> None:
         ax.tick_params(length=0)
     axes[0].set_yticks(positions, names)
     fig.suptitle("Validation metrics by model", x=0.01, ha="left", fontsize=13, fontweight="bold")
-    fig.tight_layout()
+    if any(len(m.runs) > 1 for m in models):
+        fig.text(
+            0.01,
+            0.0,
+            "Bars show the mean over training seeds; whiskers show one standard deviation.",
+            fontsize=9,
+            color=INK_SECONDARY,
+        )
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
     fig.savefig(path)
     plt.close(fig)
 
 
-def plot_roc(results: list[dict], results_dir: Path, path: Path) -> None:
+def _seed_note(models: list[ModelResults]) -> str | None:
+    seeds = {m.primary["seed"] for m in models if m.primary["seed"] is not None}
+    if not seeds:
+        return None
+    return "Trained models: the run with seed " + ", ".join(str(s) for s in sorted(seeds)) + "."
+
+
+def plot_roc(models: list[ModelResults], results_dir: Path, path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.4, 6))
-    for result in results:
-        saved = np.load(results_dir / result["slug"] / "scores.npz")
+    for model in models:
+        run = model.primary
+        saved = np.load(results_dir / model.slug / run_name(run["seed"]) / "scores.npz")
         fpr, tpr, _ = roc_curve(saved["labels"], saved["scores"])
-        ax.plot(
-            fpr,
-            tpr,
-            color=MODEL_COLORS[result["slug"]],
-            label=f"{result['name']}  (AUC {result['metrics']['roc_auc']:.3f})",
-        )
+        spread = model.std("roc_auc")
+        auc = f"{model.mean('roc_auc'):.3f}" + ("" if spread is None else f" ± {spread:.3f}")
+        ax.plot(fpr, tpr, color=MODEL_COLORS[model.slug], label=f"{model.name}  (AUC {auc})")
     ax.plot([0, 1], [0, 1], color=AXIS, linewidth=1, linestyle="--")
     ax.set_xlabel("False positive rate")
     ax.set_ylabel("True positive rate")
@@ -154,14 +227,18 @@ def plot_roc(results: list[dict], results_dir: Path, path: Path) -> None:
     ax.set_ylim(0, 1.005)
     ax.set_aspect("equal")
     ax.legend(loc="lower right")
+    note = _seed_note(models)
+    if note:
+        fig.text(0.02, 0.0, f"{note} AUC is the mean over seeds.", fontsize=9, color=INK_SECONDARY)
     fig.savefig(path)
     plt.close(fig)
 
 
-def plot_confusion_matrices(results: list[dict], path: Path) -> None:
+def plot_confusion_matrices(models: list[ModelResults], path: Path) -> None:
     classes = ["Not duplicate", "Duplicate"]
-    fig, axes = plt.subplots(1, len(results), figsize=(3.3 * len(results), 3.7), squeeze=False)
-    for ax, result in zip(axes[0], results, strict=True):
+    fig, axes = plt.subplots(1, len(models), figsize=(3.3 * len(models), 3.9), squeeze=False)
+    for ax, model in zip(axes[0], models, strict=True):
+        result = model.primary
         counts = np.array(result["metrics"]["confusion_matrix"])
         shares = counts / counts.sum(axis=1, keepdims=True)
         ax.imshow(shares, cmap=SEQUENTIAL, vmin=0, vmax=1)
@@ -178,70 +255,58 @@ def plot_confusion_matrices(results: list[dict], path: Path) -> None:
         ax.set_xticks([0, 1], classes)
         ax.set_yticks([0, 1], classes, rotation=90, va="center")
         ax.set_xlabel("Predicted")
-        ax.set_title(result["name"], fontsize=10)
+        ax.set_title(model.name, fontsize=10)
         ax.grid(False)
         ax.tick_params(length=0)
         for spine in ax.spines.values():
             spine.set_visible(False)
     axes[0][0].set_ylabel("Actual")
-    fig.tight_layout()
+    note = _seed_note(models)
+    if note:
+        fig.text(0.01, 0.0, note, fontsize=9, color=INK_SECONDARY)
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig.savefig(path)
     plt.close(fig)
 
 
-def plot_rnn_history(name: str, history: list[dict], path: Path) -> None:
-    epochs = [h["epoch"] for h in history]
-    best = min(history, key=lambda h: h["tune_loss"])["epoch"]
+def _seed_lines(ax, histories: list[list[dict]], x: str, y: str, color: str, label: str) -> None:
+    """One line per seed in a shared colour, so the spread between runs is visible."""
+    for position, history in enumerate(histories):
+        points = [(h[x], h[y]) for h in history if h[y] is not None]
+        ax.plot(
+            *zip(*points, strict=True),
+            color=color,
+            linewidth=1.5,
+            alpha=0.75,
+            label=label if position == 0 else None,
+        )
+
+
+def _runs_title(title: str, histories: list[list[dict]]) -> str:
+    return title if len(histories) == 1 else f"{title} ({len(histories)} seeds)"
+
+
+def plot_rnn_history(name: str, histories: list[list[dict]], path: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 3.8))
-    for ax, key, label in ((axes[0], "loss", "Loss"), (axes[1], "accuracy", "Accuracy")):
-        ax.plot(
-            epochs,
-            [h[f"train_{key}"] for h in history],
-            color=TRAIN_COLOR,
-            marker="o",
-            label="Train",
-        )
-        ax.plot(
-            epochs,
-            [h[f"tune_{key}"] for h in history],
-            color=TUNE_COLOR,
-            marker="o",
-            label="Tuning split",
-        )
-        ax.axvline(best, color=AXIS, linewidth=1, linestyle="--")
+    for ax, key in ((axes[0], "loss"), (axes[1], "accuracy")):
+        _seed_lines(ax, histories, "epoch", f"train_{key}", TRAIN_COLOR, "Train")
+        _seed_lines(ax, histories, "epoch", f"tune_{key}", TUNE_COLOR, "Tuning split")
         ax.set_xlabel("Epoch")
-        ax.set_xticks(epochs)
-        ax.set_title(f"{name}: {label.lower()}")
-    axes[0].annotate(
-        "restored checkpoint",
-        xy=(best, axes[0].get_ylim()[1]),
-        xytext=(4, -4),
-        textcoords="offset points",
-        va="top",
-        fontsize=8.5,
-        color=INK_SECONDARY,
-    )
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.set_title(_runs_title(f"{name}: {key}", histories))
     axes[0].legend()
     fig.tight_layout()
     fig.savefig(path)
     plt.close(fig)
 
 
-def plot_sbert_history(history: list[dict], path: Path) -> None:
-    trained = [h for h in history if h["train_loss"] is not None]
+def plot_sbert_history(histories: list[list[dict]], path: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 3.8))
-    axes[0].plot(
-        [h["step"] for h in trained],
-        [h["train_loss"] for h in trained],
-        color=TRAIN_COLOR,
-        marker="o",
-    )
-    axes[0].set_title("Fine-tuned Sentence-BERT: training loss")
+    _seed_lines(axes[0], histories, "step", "train_loss", TRAIN_COLOR, "Train")
+    axes[0].set_title(_runs_title("Fine-tuned Sentence-BERT: training loss", histories))
     axes[0].set_ylabel("Online contrastive loss per pair")
-    axes[1].plot(
-        [h["step"] for h in history], [h["tune_f1"] for h in history], color=TUNE_COLOR, marker="o"
-    )
-    axes[1].set_title("Fine-tuned Sentence-BERT: tuning-split F1")
+    _seed_lines(axes[1], histories, "step", "tune_f1", TUNE_COLOR, "Tuning split")
+    axes[1].set_title(_runs_title("Fine-tuned Sentence-BERT: tuning-split F1", histories))
     for ax in axes:
         ax.set_xlabel("Training step")
     fig.tight_layout()
@@ -249,44 +314,56 @@ def plot_sbert_history(history: list[dict], path: Path) -> None:
     plt.close(fig)
 
 
-def build_report(results_dir: str | Path) -> pd.DataFrame:
+def build_report(results_dir: str | Path) -> str:
+    """Write the tables, summary and figures; returns the comparison table as Markdown."""
     results_dir = Path(results_dir)
-    results = load_results(results_dir)
-    if not results:
+    models = load_results(results_dir)
+    if not models:
         raise FileNotFoundError(f"No results under {results_dir}. Run `qqp train all` first.")
 
-    table = comparison_table(results)
-    table.to_csv(results_dir / "comparison.csv", float_format="%.4f")
-    (results_dir / "comparison.md").write_text(to_markdown(table), encoding="utf-8")
-
-    ranked = sorted(
-        results, key=lambda r: (r["metrics"]["f1"], r["metrics"]["roc_auc"]), reverse=True
+    markdown = to_markdown(models)
+    comparison_table(models).to_csv(
+        results_dir / "comparison.csv", index=False, float_format="%.4f"
     )
+    runs_table(models).to_csv(results_dir / "runs.csv", index=False, float_format="%.4f")
+    (results_dir / "comparison.md").write_text(markdown, encoding="utf-8")
+
+    ranked = sorted(models, key=lambda m: (m.mean("f1"), m.mean("roc_auc")), reverse=True)
     write_json(
         results_dir / "summary.json",
         {
-            "best_model": ranked[0]["slug"],
-            "selection_rule": "highest validation F1, ties broken by ROC-AUC",
-            "ranking": [r["slug"] for r in ranked],
+            "best_model": ranked[0].slug,
+            "selection_rule": "highest mean validation F1 across seeds, ties broken by ROC-AUC",
+            "ranking": [m.slug for m in ranked],
+            "models": {
+                m.slug: {
+                    "runs": len(m.runs),
+                    "seeds": [r["seed"] for r in m.runs if r["seed"] is not None],
+                    **{key: {"mean": m.mean(key), "std": m.std(key)} for key in METRICS},
+                }
+                for m in models
+            },
         },
     )
 
     figures = results_dir / "figures"
     figures.mkdir(exist_ok=True)
-    plot_metrics(results, figures / "metrics.png")
-    plot_roc(results, results_dir, figures / "roc_curves.png")
-    plot_confusion_matrices(results, figures / "confusion_matrices.png")
-    for result in results:
-        history_path = results_dir / result["slug"] / "history.json"
-        if not history_path.exists():
+    plot_metrics(models, figures / "metrics.png")
+    plot_roc(models, results_dir, figures / "roc_curves.png")
+    plot_confusion_matrices(models, figures / "confusion_matrices.png")
+    for model in models:
+        paths = [
+            results_dir / model.slug / run_name(r["seed"]) / "history.json" for r in model.runs
+        ]
+        histories = [read_json(path) for path in paths if path.exists()]
+        if not histories:
             continue
-        history = read_json(history_path)
-        target = figures / f"{result['slug']}_training.png"
-        if result["slug"] == "sbert_finetuned":
-            plot_sbert_history(history, target)
+        target = figures / f"{model.slug}_training.png"
+        if model.slug == "sbert_finetuned":
+            plot_sbert_history(histories, target)
         else:
-            plot_rnn_history(result["name"], history, target)
+            plot_rnn_history(model.name, histories, target)
 
-    log.info("best model: %s", ranked[0]["name"])
+    log.info("best model: %s", ranked[0].name)
     log.info("report written to %s", results_dir)
-    return table
+    return markdown

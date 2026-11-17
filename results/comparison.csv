@@ -1,6 +1,6 @@
-Model,Accuracy,Precision,Recall,F1-score,ROC-AUC,Threshold,Train time (min),Inference (pairs/s)
-TF-IDF + cosine,0.5823,0.4655,0.9090,0.6157,0.6879,0.1555,0.2156,29161.0251
-Siamese LSTM,0.8195,0.7308,0.8073,0.7671,0.9011,0.6341,5.6202,55921.4881
-Siamese BiLSTM,0.8183,0.7146,0.8429,0.7735,0.9048,0.5878,5.7084,45880.8464
-Sentence-BERT + cosine,0.7638,0.6250,0.8961,0.7364,0.8707,0.7338,0.0000,2281.5676
-Fine-tuned Sentence-BERT,0.8871,0.8039,0.9168,0.8567,0.9541,0.7991,26.5196,2138.9298
+model,name,runs,accuracy_mean,accuracy_std,precision_mean,precision_std,recall_mean,recall_std,f1_mean,f1_std,roc_auc_mean,roc_auc_std,train_minutes_mean,train_minutes_std,pairs_per_second_mean,pairs_per_second_std
+tfidf,TF-IDF + cosine,1,0.5823,,0.4655,,0.9090,,0.6157,,0.6879,,0.2195,,32233.9481,
+siamese_lstm,Siamese LSTM,5,0.8164,0.0075,0.7161,0.0164,0.8321,0.0224,0.7694,0.0079,0.9026,0.0062,5.4441,1.3598,57694.4997,383.1905
+siamese_bilstm,Siamese BiLSTM,5,0.8179,0.0049,0.7164,0.0088,0.8369,0.0072,0.7720,0.0048,0.9041,0.0034,5.4720,0.7920,46552.2288,447.2883
+sbert,Sentence-BERT + cosine,1,0.7222,,0.5837,,0.8560,,0.6941,,0.8268,,0.0000,,698.5660,
+sbert_finetuned,Fine-tuned Sentence-BERT,5,0.8881,0.0012,0.8141,0.0051,0.9023,0.0050,0.8559,0.0009,0.9531,0.0002,68.2813,0.6690,673.7269,12.6648

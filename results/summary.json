@@ -1,11 +1,151 @@
 {
   "best_model": "sbert_finetuned",
-  "selection_rule": "highest validation F1, ties broken by ROC-AUC",
+  "selection_rule": "highest mean validation F1 across seeds, ties broken by ROC-AUC",
   "ranking": [
     "sbert_finetuned",
     "siamese_bilstm",
     "siamese_lstm",
     "sbert",
     "tfidf"
-  ]
+  ],
+  "models": {
+    "tfidf": {
+      "runs": 1,
+      "seeds": [],
+      "accuracy": {
+        "mean": 0.5822903784318575,
+        "std": null
+      },
+      "precision": {
+        "mean": 0.46554274901083775,
+        "std": null
+      },
+      "recall": {
+        "mean": 0.9090359422237152,
+        "std": null
+      },
+      "f1": {
+        "mean": 0.6157451649601821,
+        "std": null
+      },
+      "roc_auc": {
+        "mean": 0.6879196841078135,
+        "std": null
+      }
+    },
+    "siamese_lstm": {
+      "runs": 5,
+      "seeds": [
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "accuracy": {
+        "mean": 0.8164234479347019,
+        "std": 0.007457302899241669
+      },
+      "precision": {
+        "mean": 0.7161211013591957,
+        "std": 0.016361684088028558
+      },
+      "recall": {
+        "mean": 0.8320591199193819,
+        "std": 0.022410589465511544
+      },
+      "f1": {
+        "mean": 0.7694387882967902,
+        "std": 0.007939629848398883
+      },
+      "roc_auc": {
+        "mean": 0.902597805725674,
+        "std": 0.006163101584299833
+      }
+    },
+    "siamese_bilstm": {
+      "runs": 5,
+      "seeds": [
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "accuracy": {
+        "mean": 0.8179470690081623,
+        "std": 0.004937742100372324
+      },
+      "precision": {
+        "mean": 0.7164476385524907,
+        "std": 0.008784021104889754
+      },
+      "recall": {
+        "mean": 0.836936513268391,
+        "std": 0.007247441856064718
+      },
+      "f1": {
+        "mean": 0.7719713461476927,
+        "std": 0.0048378514642082385
+      },
+      "roc_auc": {
+        "mean": 0.9040599175791068,
+        "std": 0.0034091043857223616
+      }
+    },
+    "sbert": {
+      "runs": 1,
+      "seeds": [],
+      "accuracy": {
+        "mean": 0.7222112292851842,
+        "std": null
+      },
+      "precision": {
+        "mean": 0.5836998350742166,
+        "std": null
+      },
+      "recall": {
+        "mean": 0.8559623782331206,
+        "std": null
+      },
+      "f1": {
+        "mean": 0.6940865633426851,
+        "std": null
+      },
+      "roc_auc": {
+        "mean": 0.8268132737889423,
+        "std": null
+      }
+    },
+    "sbert_finetuned": {
+      "runs": 5,
+      "seeds": [
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "accuracy": {
+        "mean": 0.888147415285679,
+        "std": 0.0012462407566452415
+      },
+      "precision": {
+        "mean": 0.8140711059537582,
+        "std": 0.005056103383322356
+      },
+      "recall": {
+        "mean": 0.902344642257306,
+        "std": 0.004994454206305943
+      },
+      "f1": {
+        "mean": 0.8559148555832046,
+        "std": 0.000886737273669938
+      },
+      "roc_auc": {
+        "mean": 0.953089769395995,
+        "std": 0.0002164911739178642
+      }
+    }
+  }
 }

@@ -1,0 +1,42 @@
+{
+  "slug": "sbert_finetuned",
+  "name": "Fine-tuned Sentence-BERT",
+  "seed": 42,
+  "saved_for_inference": true,
+  "threshold": 0.7940032482147217,
+  "metrics": {
+    "accuracy": 0.887830818698986,
+    "precision": 0.8154333780324272,
+    "recall": 0.8987571380584481,
+    "f1": 0.8550701479658688,
+    "roc_auc": 0.9532270050027309,
+    "confusion_matrix": [
+      [
+        22517,
+        3028
+      ],
+      [
+        1507,
+        13378
+      ]
+    ]
+  },
+  "train_seconds": 4065.17690999998,
+  "validation_inference_seconds": 58.795846599998185,
+  "n_train": 345653,
+  "n_tune": 18193,
+  "n_validation": 40430,
+  "device": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "split_seed": 42,
+  "config": {
+    "model_name": "sentence-transformers/nli-distilroberta-base-v2",
+    "max_seq_length": 64,
+    "batch_size": 64,
+    "eval_batch_size": 256,
+    "lr": 2e-05,
+    "epochs": 3,
+    "margin": 0.5,
+    "warmup_fraction": 0.1,
+    "eval_every": 1000
+  }
+}

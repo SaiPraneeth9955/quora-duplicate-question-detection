@@ -1,0 +1,45 @@
+{
+  "slug": "siamese_bilstm",
+  "name": "Siamese BiLSTM",
+  "seed": 45,
+  "saved_for_inference": false,
+  "threshold": 0.6031422019004822,
+  "metrics": {
+    "accuracy": 0.822260697501855,
+    "precision": 0.7227333217612683,
+    "recall": 0.8391669465905274,
+    "f1": 0.7766102959462821,
+    "roc_auc": 0.9069544461475474,
+    "confusion_matrix": [
+      [
+        20753,
+        4792
+      ],
+      [
+        2394,
+        12491
+      ]
+    ]
+  },
+  "train_seconds": 372.9043283999781,
+  "validation_inference_seconds": 0.8603279999806546,
+  "n_train": 345653,
+  "n_tune": 18193,
+  "n_validation": 40430,
+  "device": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "split_seed": 42,
+  "config": {
+    "max_vocab": 50000,
+    "min_freq": 2,
+    "max_len": 30,
+    "embedding_dim": 200,
+    "hidden_dim": 128,
+    "dropout": 0.3,
+    "pooling": "max",
+    "lr": 0.001,
+    "lr_decay": 0.5,
+    "batch_size": 512,
+    "epochs": 15,
+    "patience": 3
+  }
+}

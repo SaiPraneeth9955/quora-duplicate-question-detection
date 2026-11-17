@@ -40,7 +40,7 @@ class RnnConfig:
 
 @dataclass
 class SbertConfig:
-    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    model_name: str = "sentence-transformers/nli-distilroberta-base-v2"
     max_seq_length: int = 64
     batch_size: int = 64
     eval_batch_size: int = 256
@@ -53,7 +53,8 @@ class SbertConfig:
 
 @dataclass
 class Config:
-    seed: int = 42
+    split_seed: int = 42
+    seeds: list[int] = field(default_factory=lambda: [42, 43, 44, 45, 46])
     artifacts_dir: str = "artifacts"
     results_dir: str = "results"
     data: DataConfig = field(default_factory=DataConfig)

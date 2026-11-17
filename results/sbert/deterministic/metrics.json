@@ -1,0 +1,35 @@
+{
+  "slug": "sbert",
+  "name": "Sentence-BERT + cosine",
+  "seed": null,
+  "saved_for_inference": true,
+  "threshold": 0.7348041534423828,
+  "metrics": {
+    "accuracy": 0.7222112292851842,
+    "precision": 0.5836998350742166,
+    "recall": 0.8559623782331206,
+    "f1": 0.6940865633426851,
+    "roc_auc": 0.8268132737889423,
+    "confusion_matrix": [
+      [
+        16458,
+        9087
+      ],
+      [
+        2144,
+        12741
+      ]
+    ]
+  },
+  "train_seconds": 0.0,
+  "validation_inference_seconds": 57.875705100013874,
+  "n_train": 345653,
+  "n_tune": 18193,
+  "n_validation": 40430,
+  "device": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "split_seed": 42,
+  "config": {
+    "model_name": "sentence-transformers/nli-distilroberta-base-v2",
+    "max_seq_length": 64
+  }
+}

@@ -5,6 +5,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 .ipynb_checkpoints/
+*.log
 
 # Trained models are reproducible with `qqp train all`
 artifacts/

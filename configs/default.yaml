@@ -1,4 +1,5 @@
-seed: 42
+split_seed: 42                 # fixes the train / tune partition for every run
+seeds: [42, 43, 44, 45, 46]    # one training run per seed; the first is the model that is saved
 artifacts_dir: artifacts
 results_dir: results
 
@@ -28,7 +29,8 @@ rnn:
   patience: 3
 
 sbert:
-  model_name: sentence-transformers/all-MiniLM-L6-v2
+  # Pretrained on SNLI + MultiNLI only, so it has never seen Quora questions.
+  model_name: sentence-transformers/nli-distilroberta-base-v2
   max_seq_length: 64
   batch_size: 64
   eval_batch_size: 256

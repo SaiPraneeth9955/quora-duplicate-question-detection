@@ -15,6 +15,8 @@ def _config_from_args(args: argparse.Namespace) -> Config:
     cfg = load_config(path)
     if getattr(args, "subsample", None) is not None:
         cfg.data.subsample = args.subsample
+    if getattr(args, "seeds", None):
+        cfg.seeds = args.seeds
     if args.artifacts_dir:
         cfg.artifacts_dir = args.artifacts_dir
     if args.results_dir:
@@ -29,17 +31,17 @@ def _train(args: argparse.Namespace) -> None:
 
     cfg = _config_from_args(args)
     slugs = list(MODELS) if "all" in args.models else list(dict.fromkeys(args.models))
-    splits = load_splits(cfg.data, cfg.seed)
+    splits = load_splits(cfg.data, cfg.split_seed)
     for slug in slugs:
-        run_model(slug, cfg, splits, device=args.device)
-    print(build_report(cfg.results_dir).round(4).to_string())
+        run_model(slug, cfg, splits, device=args.device, force=args.force)
+    print(build_report(cfg.results_dir))
 
 
 def _report(args: argparse.Namespace) -> None:
     from qqp.report import build_report
 
     cfg = _config_from_args(args)
-    print(build_report(cfg.results_dir).round(4).to_string())
+    print(build_report(cfg.results_dir))
 
 
 def _predict(args: argparse.Namespace) -> None:
@@ -70,6 +72,8 @@ def build_parser() -> argparse.ArgumentParser:
     train = commands.add_parser("train", parents=[common], help="train and evaluate models")
     train.add_argument("models", nargs="+", choices=[*model_choices, "all"])
     train.add_argument("--subsample", type=int, help="use only N training pairs (quick runs)")
+    train.add_argument("--seeds", type=int, nargs="+", help="training seeds (overrides config)")
+    train.add_argument("--force", action="store_true", help="retrain runs that already exist")
     train.set_defaults(handler=_train)
 
     report = commands.add_parser("report", parents=[common], help="rebuild table and figures")

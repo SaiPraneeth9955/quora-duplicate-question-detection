@@ -1,6 +1,8 @@
 {
   "slug": "tfidf",
   "name": "TF-IDF + cosine",
+  "seed": null,
+  "saved_for_inference": true,
   "threshold": 0.15550961325411827,
   "metrics": {
     "accuracy": 0.5822903784318575,
@@ -19,13 +21,13 @@
       ]
     ]
   },
-  "train_seconds": 12.937124100018991,
-  "validation_inference_seconds": 1.3864395999989938,
+  "train_seconds": 13.16802579999785,
+  "validation_inference_seconds": 1.2542677000164986,
   "n_train": 345653,
   "n_tune": 18193,
   "n_validation": 40430,
   "device": "NVIDIA GeForce RTX 3050 Laptop GPU",
-  "seed": 42,
+  "split_seed": 42,
   "config": {
     "ngram_max": 2,
     "min_df": 2,
