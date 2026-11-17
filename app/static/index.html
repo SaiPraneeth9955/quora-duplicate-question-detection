@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Duplicate Question Detector</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="currentColor"/>
+          <circle cx="12.5" cy="16" r="6" fill="none" stroke="#fff" stroke-width="2.2"/>
+          <circle cx="19.5" cy="16" r="6" fill="none" stroke="#fff" stroke-width="2.2"/>
+        </svg>
+        <div>
+          <div class="brand-name">Duplicate Question Detector</div>
+          <div class="brand-sub">Semantic similarity on Quora Question Pairs</div>
+        </div>
+      </div>
+      <div class="status" id="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Connecting…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="panel" aria-labelledby="input-heading">
+      <div class="panel-head">
+        <div>
+          <h1 id="input-heading">Compare two questions</h1>
+          <p class="muted">Every trained model scores the pair; the best model gives the verdict.</p>
+        </div>
+      </div>
+
+      <form id="compare-form" novalidate>
+        <div class="fields">
+          <div class="field">
+            <label for="q1">Question 1</label>
+            <textarea id="q1" rows="3" maxlength="1000" placeholder="e.g. How can I learn Python?" required></textarea>
+          </div>
+          <button type="button" class="swap" id="swap" title="Swap questions" aria-label="Swap questions">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="field">
+            <label for="q2">Question 2</label>
+            <textarea id="q2" rows="3" maxlength="1000" placeholder="e.g. What is the best way to study Python?" required></textarea>
+          </div>
+        </div>
+
+        <div class="form-foot">
+          <div class="examples">
+            <span class="examples-label">Examples</span>
+            <button type="button" class="chip" data-q1="How can I learn Python?" data-q2="What is the best way to study Python?">Same meaning</button>
+            <button type="button" class="chip" data-q1="How can I learn Python?" data-q2="What is Java programming?">Different topic</button>
+            <button type="button" class="chip" data-q1="How do I lose weight quickly?" data-q2="What is the fastest way to lose weight?">Paraphrase</button>
+            <button type="button" class="chip" data-q1="How do I become a data scientist?" data-q2="What does a data scientist do?">Related, not same</button>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-ghost" id="clear">Clear</button>
+            <button type="submit" class="btn btn-primary" id="submit">
+              <span class="btn-label">Compare</span>
+              <kbd>Ctrl ↵</kbd>
+            </button>
+          </div>
+        </div>
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <section class="panel verdict" id="verdict" aria-live="polite" hidden>
+      <div class="verdict-main">
+        <div class="verdict-icon" id="verdict-icon" aria-hidden="true"></div>
+        <div>
+          <div class="verdict-label" id="verdict-label"></div>
+          <p class="verdict-text" id="verdict-text"></p>
+        </div>
+      </div>
+      <div class="verdict-meter">
+        <div class="meter-head">
+          <span>Similarity score</span>
+          <span class="meter-value" id="meter-value"></span>
+        </div>
+        <div class="meter" id="meter">
+          <div class="meter-fill" id="meter-fill"></div>
+          <div class="meter-threshold" id="meter-threshold"><span id="meter-threshold-label"></span></div>
+        </div>
+        <div class="meter-scale"><span>0</span><span>1</span></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="models-heading">
+      <div class="panel-head">
+        <div>
+          <h2 id="models-heading">All models</h2>
+          <p class="muted" id="models-sub">Validation F1 is the mean over five training seeds on 40,430 held-out pairs.</p>
+        </div>
+        <div class="agreement" id="agreement" hidden></div>
+      </div>
+      <div class="table-wrap">
+        <table class="models">
+          <thead>
+            <tr>
+              <th scope="col">Model</th>
+              <th scope="col" class="col-score">Score <span class="th-hint">vs threshold</span></th>
+              <th scope="col" class="num col-threshold">Threshold</th>
+              <th scope="col">Prediction</th>
+              <th scope="col" class="num">Validation F1</th>
+            </tr>
+          </thead>
+          <tbody id="model-rows"></tbody>
+        </table>
+      </div>
+      <p class="note">Scores are on each model's own scale: probabilities for the Siamese networks, cosine similarity for TF-IDF and Sentence-BERT. Each threshold was tuned to maximise F1 on a held-out tuning split.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Trained on GLUE QQP · TF-IDF, Siamese LSTM / BiLSTM, Sentence-BERT</span>
+    <span>Runs locally. No data leaves this computer.</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

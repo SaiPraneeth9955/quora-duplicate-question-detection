@@ -44,8 +44,10 @@ Training curves:
 
 ### Findings
 
-- **Fine-tuned Sentence-BERT is the best model on every metric** (F1
-  0.856 ± 0.001, ROC-AUC 0.953) and is the one selected for the demo. Its
+- **Fine-tuned Sentence-BERT is the best model** on accuracy, precision, F1
+  (0.856 ± 0.001) and ROC-AUC (0.953), and is the one selected for the demo.
+  Only TF-IDF has higher recall (0.909 vs 0.902), and only because it labels
+  most pairs as duplicates. Its
   worst seed (F1 0.855) is still eight points above the best LSTM seed
   (0.777), so the ranking does not depend on the seed.
 - **Task-specific training matters more than pretraining.** The pretrained
@@ -170,8 +172,12 @@ print(prediction.label, prediction.score)
 python app/demo.py
 ```
 
-Opens a local web page where two questions are scored by every trained model
-side by side.
+Starts a local web app at <http://127.0.0.1:7860> and opens it in the browser.
+Enter two questions to get the best model's verdict, its score against its
+decision threshold, and every other model's score side by side. The app is a
+small FastAPI service (`/api/compare`, `/api/models`) with a plain HTML page,
+so it needs no internet connection; `--port` and `--no-browser` change the
+defaults.
 
 ### Tests
 
@@ -191,7 +197,8 @@ src/qqp/
   report.py              comparison table and figures
   inference.py           loads trained models for prediction
   cli.py                 the `qqp` command
-app/demo.py              Gradio demo
+app/demo.py              web demo: FastAPI service
+app/static/              web demo: page, styles and script
 tests/                   unit tests
 results/                 comparison table, summary and figures (committed)
   runs.csv               metrics of every individual run

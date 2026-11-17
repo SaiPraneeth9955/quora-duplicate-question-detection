@@ -20,8 +20,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-demo = ["gradio>=4.0"]
-dev = ["pytest>=8.0", "ruff>=0.5"]
+demo = ["fastapi>=0.110", "uvicorn>=0.29"]
+dev = ["pytest>=8.0", "ruff>=0.5", "httpx>=0.27", "fastapi>=0.110"]
 
 [project.scripts]
 qqp = "qqp.cli:main"
