@@ -1,0 +1,16 @@
+# Runtime dependencies of the demo, pinned to the versions the models were trained
+# and evaluated with. PyTorch (CPU build) is installed separately in the Dockerfile.
+sentence-transformers==6.3.0
+# Imported by sentence-transformers at start-up but not declared as its dependency.
+datasets==5.2.0
+transformers==5.23.0
+tokenizers==0.23.3
+safetensors==0.8.0
+huggingface_hub==2.4.0
+scikit-learn==1.9.1
+pandas==3.1.1
+numpy==2.4.6
+joblib==1.6.0
+pyyaml==6.0.3
+fastapi==0.163.1
+uvicorn==0.54.0

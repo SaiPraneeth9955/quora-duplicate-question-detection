@@ -140,8 +140,6 @@ function keepAwake() {
 async function init() {
   const form = $("compare-form");
   form.addEventListener("submit", compare);
-  setInterval(keepAwake, 5000);
-  document.addEventListener("visibilitychange", keepAwake);
   $("clear").addEventListener("click", reset);
   $("swap").addEventListener("click", () => {
     [$("q1").value, $("q2").value] = [$("q2").value, $("q1").value];
@@ -163,6 +161,13 @@ async function init() {
     models = payload.models;
     renderRows(null);
     setStatus("ready", `${models.length} models loaded`);
+    $("privacy-note").textContent = payload.hosted
+      ? "Questions are scored on the server and are not stored."
+      : "Runs locally. No data leaves this computer.";
+    if (payload.keep_awake) {
+      setInterval(keepAwake, 5000);
+      document.addEventListener("visibilitychange", keepAwake);
+    }
   } catch {
     setStatus("error", "Server not reachable");
   }

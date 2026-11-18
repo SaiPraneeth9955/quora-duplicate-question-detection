@@ -2,8 +2,9 @@
 
     python app/demo.py                 # serves http://127.0.0.1:7860 and opens the browser
     python app/demo.py --no-browser    # serve only
+    python app/demo.py --hosted ...    # running as a public website (see deploy/)
 
-The page and API run entirely on this computer; nothing is sent elsewhere.
+Run locally, the page and API stay on this computer; nothing is sent elsewhere.
 """
 
 import argparse
@@ -68,6 +69,7 @@ def create_app(
     best: str,
     validation: dict[str, dict] | None = None,
     warmup: bool = False,
+    hosted: bool = False,
 ):
     """Build the web app around already-loaded detectors.
 
@@ -109,11 +111,20 @@ def create_app(
             "validation_roc_auc": metrics.get("roc_auc"),
         }
 
-    app = FastAPI(title="Duplicate Question Detector", docs_url=None, redoc_url=None)
+    app = FastAPI(title="Quora Question Pair Semantic Similarity", docs_url=None, redoc_url=None)
+
+    import torch
+
+    gpu = torch.cuda.is_available()
 
     @app.get("/api/models")
     def models() -> dict:
-        return {"best": best, "models": [describe(slug) for slug in detectors]}
+        return {
+            "best": best,
+            "models": [describe(slug) for slug in detectors],
+            "hosted": hosted,
+            "keep_awake": gpu,
+        }
 
     def score_all(question1: str, question2: str) -> list[dict]:
         results = []
@@ -130,9 +141,7 @@ def create_app(
         return results
 
     def keep_gpu_awake() -> None:
-        import torch
-
-        if torch.cuda.is_available():
+        if gpu:
             torch.ones(1, device="cuda").sum().item()
 
     @app.post("/api/warm", status_code=204)
@@ -165,7 +174,7 @@ def create_app(
     return app
 
 
-def load_app(artifacts_dir: str, results_dir: str, device: str | None = None):
+def load_app(artifacts_dir: str, results_dir: str, device: str | None = None, hosted: bool = False):
     from qqp.inference import available_models, best_model_slug, load_detector
     from qqp.utils import read_json
 
@@ -191,7 +200,7 @@ def load_app(artifacts_dir: str, results_dir: str, device: str | None = None):
     detectors = {
         slug: load_detector(slug, artifacts_dir, results_dir, device=device) for slug in slugs
     }
-    return create_app(detectors, best, validation, warmup=True)
+    return create_app(detectors, best, validation, warmup=True, hosted=hosted)
 
 
 def main() -> None:
@@ -202,17 +211,20 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 7860)))
     parser.add_argument("--device", help="cuda or cpu (default: cuda when available)")
     parser.add_argument("--no-browser", action="store_true", help="do not open a browser tab")
+    parser.add_argument(
+        "--hosted", action="store_true", help="running as a public website (changes page wording)"
+    )
     args = parser.parse_args()
 
     _prefer_local_models(Path(args.artifacts_dir))
     _quiet_libraries()
     print("Loading models...", flush=True)
-    app = load_app(args.artifacts_dir, args.results_dir, args.device)
+    app = load_app(args.artifacts_dir, args.results_dir, args.device, hosted=args.hosted)
 
     import uvicorn
 
     url = f"http://{args.host}:{args.port}"
-    print(f"Duplicate Question Detector is ready at {url}  (press Ctrl+C to stop)", flush=True)
+    print(f"Demo is ready at {url}  (press Ctrl+C to stop)", flush=True)
     if not args.no_browser:
         threading.Timer(1.0, webbrowser.open, args=(url,)).start()
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

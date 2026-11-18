@@ -5,7 +5,6 @@ import re
 from dataclasses import dataclass
 
 import pandas as pd
-from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 
 from qqp.config import DataConfig
@@ -44,6 +43,9 @@ class Splits:
 
 
 def load_splits(cfg: DataConfig, seed: int) -> Splits:
+    # Imported here so that inference (the demo, `qqp predict`) does not need `datasets`.
+    from datasets import load_dataset
+
     raw = load_dataset(cfg.dataset, cfg.subset)
     train_full = raw["train"].to_pandas()[COLUMNS]
     validation = raw["validation"].to_pandas()[COLUMNS].reset_index(drop=True)

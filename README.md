@@ -1,4 +1,4 @@
-# Duplicate Question Detection on Quora Question Pairs
+# Quora Question Pair Semantic Similarity
 
 Given two questions, decide whether they ask the same thing. This repository
 implements five approaches, from a bag-of-words baseline to a fine-tuned
@@ -178,6 +178,20 @@ decision threshold, and every other model's score side by side. The app is a
 small FastAPI service (`/api/compare`, `/api/models`) with a plain HTML page,
 so it needs no internet connection; `--port` and `--no-browser` change the
 defaults.
+
+### Deploy online
+
+The demo runs as a Docker container on [Hugging Face Spaces](https://huggingface.co/spaces)
+(free CPU hardware is enough: about 0.1–0.4 s per comparison).
+
+```bash
+hf auth login                                        # once, with a write token
+python deploy/push_space.py duplicate-question-detector
+```
+
+This uploads the container recipe in [`deploy/huggingface/`](deploy/huggingface),
+the package, the web app and the trained models; Hugging Face builds the image
+and serves the app at `https://<user>-duplicate-question-detector.hf.space`.
 
 ### Tests
 

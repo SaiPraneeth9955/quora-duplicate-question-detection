@@ -38,6 +38,7 @@ def client(demo):
 def test_models_endpoint_lists_models_and_best(client):
     payload = client.get("/api/models").json()
     assert payload["best"] == "sbert_finetuned"
+    assert payload["hosted"] is False
     assert [m["slug"] for m in payload["models"]] == ["tfidf", "sbert_finetuned"]
     assert payload["models"][1]["validation_f1"] == 0.856
     assert payload["models"][0]["validation_f1"] is None
@@ -62,6 +63,6 @@ def test_warm_endpoint_runs_without_a_body(client):
 
 
 def test_page_and_assets_are_served(client):
-    assert "Duplicate Question Detector" in client.get("/").text
+    assert "Quora Question Pair Semantic Similarity" in client.get("/").text
     for asset in ("styles.css", "app.js", "favicon.svg"):
         assert client.get(f"/static/{asset}").status_code == 200

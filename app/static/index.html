@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Duplicate Question Detector</title>
+  <title>Quora Question Pair Semantic Similarity</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
@@ -18,8 +18,8 @@
           <circle cx="19.5" cy="16" r="6" fill="none" stroke="#fff" stroke-width="2.2"/>
         </svg>
         <div>
-          <div class="brand-name">Duplicate Question Detector</div>
-          <div class="brand-sub">Semantic similarity on Quora Question Pairs</div>
+          <div class="brand-name">Quora Question Pair Semantic Similarity</div>
+          <div class="brand-sub">Duplicate question detection with five models</div>
         </div>
       </div>
       <div class="status" id="status">
@@ -122,7 +122,7 @@
 
   <footer class="footer">
     <span>Trained on GLUE QQP · TF-IDF, Siamese LSTM / BiLSTM, Sentence-BERT</span>
-    <span>Runs locally. No data leaves this computer.</span>
+    <span id="privacy-note"></span>
   </footer>
 
   <script src="/static/app.js"></script>
