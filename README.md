@@ -187,8 +187,9 @@ defaults.
 ### Deploy online
 
 The demo runs as a Docker container on [Hugging Face Spaces](https://huggingface.co/spaces)
-on CPU-only hardware. On a laptop CPU, one comparison with all five models took
-about 105 ms in our test; the Space's own speed has not been measured yet.
+on CPU-only hardware. With the GPU disabled on our laptop, one comparison with
+all five models took 60 to 68 ms (mean 64.9 ms over 20 requests); the Space's
+own speed has not been measured yet.
 
 ```bash
 hf auth login                                        # once, with a write token
@@ -231,7 +232,8 @@ artifacts/               trained models (generated, not committed)
 - Seeds vary model initialisation and batch order but not the train / tune
   partition, which is fixed so that every model sees identical data. The
   reported spread therefore excludes variation from resampling the data.
-- QQP labels are known to be noisy, which caps the accuracy any model can
-  reach on this benchmark.
+- The dataset authors state that the ground-truth labels "contain some amount
+  of noise" ([Quora dataset release](https://quoradata.quora.com/First-Quora-Dataset-Release-Question-Pairs)),
+  which caps the accuracy any model can reach on this benchmark.
 - The LSTMs learn embeddings from scratch; pretrained word vectors would
   likely narrow the gap to the transformer.
