@@ -48,24 +48,26 @@ Training curves:
   (0.856 ± 0.001) and ROC-AUC (0.953), and is the one selected for the demo.
   Only TF-IDF has higher recall (0.909 vs 0.902), and only because it labels
   most pairs as duplicates. Its
-  worst seed (F1 0.855) is still eight points above the best LSTM seed
-  (0.777), so the ranking does not depend on the seed.
+  worst seed (F1 0.8551) is still 7.85 points above the best LSTM or BiLSTM
+  seed (0.7766), so the ranking does not depend on the seed.
 - **Task-specific training matters more than pretraining.** The pretrained
   encoder used as-is (F1 0.694) is beaten by both LSTMs trained from scratch
-  on QQP (F1 0.769 and 0.772). Fine-tuning the same encoder adds 16 points of
-  F1.
+  on QQP (F1 0.769 and 0.772). Fine-tuning the same encoder adds 16.2 points
+  of F1 (0.6941 to 0.8559).
 - **Bidirectionality makes no measurable difference.** The BiLSTM's mean F1 is
-  0.003 higher than the LSTM's, well inside the seed-to-seed spread (LSTM F1
-  ranges from 0.757 to 0.777 across seeds). A Welch t-test over the five runs
-  finds no significant difference in accuracy, F1 or ROC-AUC (p > 0.5 for
-  each). The BiLSTM is, however, more consistent between seeds.
-- **Word overlap is a weak signal.** TF-IDF only reaches 0.91 recall by
+  0.0025 higher than the LSTM's, well inside the seed-to-seed spread (LSTM F1
+  ranges from 0.7569 to 0.7766 across seeds). A Welch t-test over the five
+  runs finds no significant difference in accuracy (p = 0.71), F1 (p = 0.56)
+  or ROC-AUC (p = 0.66). The BiLSTM is, however, more consistent between seeds
+  (F1 standard deviation 0.0048 vs 0.0079).
+- **Word overlap is a weak signal.** TF-IDF only reaches 0.909 recall by
   flagging most pairs as duplicates; its accuracy (0.582) is below the 0.632
   obtained by always answering "not duplicate". Many non-duplicate pairs in
   QQP share most of their words.
-- **Accuracy costs compute.** The LSTMs train in under six minutes and score
-  about 47,000 to 58,000 pairs per second; the fine-tuned transformer takes 68
-  minutes to train and scores about 670 pairs per second, 69 to 86 times slower.
+- **Accuracy costs compute.** The LSTM and BiLSTM train in 5.4 and 5.5 minutes
+  on average and score 57,694 and 46,552 pairs per second; the fine-tuned
+  transformer takes 68.3 minutes to train and scores 674 pairs per second,
+  85.6 and 69.1 times slower.
 
 ## Evaluation protocol
 
@@ -129,8 +131,9 @@ qqp train all
 
 This downloads the dataset, trains each model, and writes metrics, figures and
 the comparison table to `results/` and trained models to `artifacts/`. The
-full run (17 training runs) takes about 6 hours 45 minutes on the GPU above,
-almost all of it the five fine-tuning runs. Useful variations:
+17 runs spent 6 hours 42 minutes training and scoring the validation set on
+the GPU above, 86% of it in the five fine-tuning runs (dataset download and
+loading not included). Useful variations:
 
 ```bash
 qqp train tfidf siamese_bilstm       # selected models only
@@ -182,7 +185,8 @@ defaults.
 ### Deploy online
 
 The demo runs as a Docker container on [Hugging Face Spaces](https://huggingface.co/spaces)
-(free CPU hardware is enough: about 0.1–0.4 s per comparison).
+on CPU-only hardware. On a laptop CPU, one comparison with all five models took
+about 105 ms in our test; the Space's own speed has not been measured yet.
 
 ```bash
 hf auth login                                        # once, with a write token
