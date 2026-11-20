@@ -29,7 +29,7 @@ rnn:
   patience: 3
 
 sbert:
-  # Pretrained on SNLI + MultiNLI only, so it has never seen Quora questions.
+  # Trained on SNLI + MultiNLI, not on Quora Question Pairs (no benchmark leakage).
   model_name: sentence-transformers/nli-distilroberta-base-v2
   max_seq_length: 64
   batch_size: 64

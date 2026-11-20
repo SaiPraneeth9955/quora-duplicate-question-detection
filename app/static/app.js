@@ -130,11 +130,22 @@ function reset() {
 }
 
 // A laptop GPU sleeps after ~10 s idle and needs over a second to wake. While this
-// page is visible, a tiny keep-alive every 5 s keeps comparisons instant.
+// page is visible, a tiny keep-alive every 5 s keeps comparisons instant. If the
+// server has been stopped, the keep-alive stops too and the status says so.
+let keepAwakeTimer = null;
+
+function stopKeepAwake() {
+  clearInterval(keepAwakeTimer);
+  keepAwakeTimer = null;
+  document.removeEventListener("visibilitychange", keepAwake);
+}
+
 function keepAwake() {
-  if (document.visibilityState === "visible") {
-    fetch("/api/warm", { method: "POST" }).catch(() => {});
-  }
+  if (keepAwakeTimer === null || document.visibilityState !== "visible") return;
+  fetch("/api/warm", { method: "POST" }).catch(() => {
+    stopKeepAwake();
+    setStatus("error", "Server not reachable");
+  });
 }
 
 async function init() {
@@ -165,7 +176,7 @@ async function init() {
       ? "Questions are scored on the server and are not stored."
       : "Runs locally. No data leaves this computer.";
     if (payload.keep_awake) {
-      setInterval(keepAwake, 5000);
+      keepAwakeTimer = setInterval(keepAwake, 5000);
       document.addEventListener("visibilitychange", keepAwake);
     }
   } catch {

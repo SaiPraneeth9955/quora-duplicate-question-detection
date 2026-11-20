@@ -86,17 +86,19 @@ All five models are trained and scored on identical data.
 - The TF-IDF vocabulary and the LSTM vocabulary are built from the train split
   only.
 - F1 and ROC-AUC are the headline metrics because the classes are imbalanced
-  (63% / 37%); accuracy alone rewards predicting "not duplicate".
+  (63.2% / 36.8%); accuracy alone rewards predicting "not duplicate".
 - The partition is fixed (`split_seed: 42`), so every run of every model sees
   the same train, tune and validation pairs.
 - **Repeated runs.** The three trained neural models depend on random
   initialisation and batch order, so each is trained five times with seeds
   42–46 and reported as mean ± sample standard deviation. TF-IDF and the
   pretrained encoder are deterministic and are run once.
-- **No pretraining exposure to the benchmark.** The Sentence-BERT encoder,
-  `nli-distilroberta-base-v2`, was pretrained on SNLI and MultiNLI only. Widely
-  used alternatives such as `all-MiniLM-L6-v2` list Quora duplicate questions
-  among their training data, which would let validation pairs leak into the
+- **Not trained on the benchmark.** The Sentence-BERT encoder,
+  `nli-distilroberta-base-v2`, is DistilRoBERTa (pretrained on general web
+  text, OpenWebTextCorpus) trained for sentence similarity on SNLI and
+  MultiNLI; it was not trained on Quora Question Pairs. Widely used
+  alternatives such as `all-MiniLM-L6-v2` list Quora duplicate questions among
+  their training data, which could let validation pairs leak into the
   pretrained and fine-tuned rows.
 
 ## Models
