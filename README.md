@@ -64,8 +64,8 @@ Training curves:
   obtained by always answering "not duplicate". Many non-duplicate pairs in
   QQP share most of their words.
 - **Accuracy costs compute.** The LSTMs train in under six minutes and score
-  about 50,000 pairs per second; the fine-tuned transformer takes 68 minutes
-  to train and scores about 670 pairs per second, roughly 70 times slower.
+  47,000 to 58,000 pairs per second; the fine-tuned transformer takes 68 minutes
+  to train and scores about 670 pairs per second, roughly 70 to 85 times slower.
 
 ## Evaluation protocol
 
